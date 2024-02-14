@@ -125,7 +125,7 @@ def convert_image_to_binary(image_path, wall_thickness, scale_factor):
     return binary_data
 
 def GetMazeFromImage():
-    maze_name = 'm7'
+    maze_name = 'MazeClassicmini1'
     image_path = f"Sprite/{maze_name}.png"
     wall_thickness = 1
     scale_factor = 2

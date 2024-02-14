@@ -1,1 +1,1 @@
-pygame.init()
+pygame.display.set_caption("Дипломная игра")

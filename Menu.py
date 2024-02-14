@@ -88,17 +88,16 @@ punkts = [
 """
 import pygame
 import sys
-#from maze import world
 from maze_settings import *
 from Levels import show_level_menu
+
+pygame.display.set_caption("Дипломная игра (Главное меню)")
+
 class MainMenu:
     def __init__(self, screen):
         self.screen = screen
-        self.clock = pygame.time.Clock()
         self.buttons = []
 
-        self.YELLOW = (255, 255, 0)
-        self.VIOLET = (138, 43, 226)
         self.BLACK = (0, 0, 0)
         self.font = pygame.font.Font(None, 36)
 
@@ -106,7 +105,7 @@ class MainMenu:
         self.create_buttons()
 
         self.play_game = False  # Флаг для перехода в игровой процесс
-        
+        self.dim_color = (0, 0, 0, 150)  # RGBA: четвёртый компонент - прозрачность
     def create_buttons(self):
         self.buttons = []
 
@@ -115,18 +114,19 @@ class MainMenu:
         self.add_button('Выход')
 
     def add_button(self, text):
-        text_render = self.font.render(text, True, self.YELLOW)
+        text_render = self.font.render(text, True, Color_Yellow)
         text_rect = text_render.get_rect()
-        text_rect.center = (self.screen.get_width() // 2, len(self.buttons) * 100 + 175) # * 100 + 175 это чё блять?
+        text_rect.center = (self.screen.get_width() // 2, len(self.buttons) * 100 + 175) 
 
-        button = Button(text, 0, len(self.buttons) * 100 + 150, self.screen.get_width(), 50)
+        button = Button(text, (self.screen.get_width() - text_rect.width) // 2, len(self.buttons) * 50 + text_rect.y , text_rect.width, text_rect.height)
         self.buttons.append(button)
 
     def draw_text(self, text, color, x, y):
         text_obj = self.font.render(text, True, color)
         text_rect = text_obj.get_rect()
-        text_rect.topleft = (x, y)
+        text_rect.center = (x, y)
         self.screen.blit(text_obj, text_rect)
+        
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -140,32 +140,36 @@ class MainMenu:
                         self.selected_button_index = i
                         break
 
-
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 for button in self.buttons:
                     if button.is_hovered(pos):
                         self.perform_button_action(button)
+                        break
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
                     for button in self.buttons:
-                        if button.hovered:
+                        if button.is_hovered(pygame.mouse.get_pos()):
                             self.perform_button_action(button)
-
+                            break
 
                 if event.key == pygame.K_DOWN:
-                    self.selected_button_index = (self.selected_button_index + 1) % len(self.buttons)
+                    self.move_down()
                 elif event.key == pygame.K_UP:
-                    self.selected_button_index = (self.selected_button_index - 1) % len(self.buttons)
+                    self.move_up()
+
 
     def perform_button_action(self, button):
-        if button.text == 'Выход':
+        
+        if button.text == 'Играть':
+            self.play_game = True  # Устанавливаем флаг для перехода в игру
+            show_level_menu()
+        elif button.text == 'Настройки':
+            pass
+        elif button.text == 'Выход':
             pygame.quit()
             sys.exit()
-        if button.text == 'Играть':
-            #self.play_game = True  # Устанавливаем флаг для перехода в игру
-            show_level_menu()
 
     def move_down(self):
         for i in range(len(self.buttons)):
@@ -187,14 +191,21 @@ class MainMenu:
         while not self.play_game:
             self.handle_events()
 
-            self.screen.fill(self.BLACK)  # Очистка экрана
-
+            #self.screen.fill(self.BLACK)  # Очистка экрана
+            
+            self.screen.blit(background_image, (0, 0))  # Отображение фона
+            # Отображение затемнённого фона
+            dim_surface = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
+            dim_surface.fill(self.dim_color)
+            dim_surface.set_alpha(self.dim_color[3])
+            self.screen.blit(dim_surface, (0, 0))
+            
             # Отрисовка кнопок меню
             for i, button in enumerate(self.buttons):
                 if i == self.selected_button_index:
-                    button.draw(self.screen, self.font, self.VIOLET, self.YELLOW, self.BLACK)
+                    button.draw(self.screen, self.font, Color_Purple, Color_Yellow, self.BLACK)
                 else:
-                    button.draw(self.screen, self.font, self.YELLOW, self.VIOLET, self.BLACK)
+                    button.draw(self.screen, self.font, Color_Yellow, Color_Purple, self.BLACK)
 
             pygame.display.update()
 
@@ -207,11 +218,13 @@ class Button:
         self.height = height
         self.hovered = False
         self.centerWidth = 0#Width // 2
-        self.centerHeight = 0#Height // 2 - 300
+        self.centerHeight = (Height - self.height) // 2 #Height // 2 - 300
+
     def draw(self, surface, font, color, hover_color, bg_color):
         current_color = hover_color if self.hovered else color
         pygame.draw.rect(surface, bg_color, (self.x, self.y, self.width, self.height))
-        self.draw_text(self.text, font, current_color, surface, self.x + self.centerWidth, self.y  + self.centerHeight) 
+        self.draw_text(self.text, font, current_color, surface, self.x, self.y)
+
 
     def draw_text(self, text, font, color, surface, x, y):
         text_obj = font.render(text, True, color)
@@ -220,4 +233,10 @@ class Button:
         surface.blit(text_obj, text_rect)
 
     def is_hovered(self, pos):
-        return self.x < pos[0] < self.x + self.width and self.y - self.centerHeight < pos[1] < self.y + self.height + self.centerHeight
+        text_rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        return text_rect.collidepoint(pos)
+
+
+
+
+

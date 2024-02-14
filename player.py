@@ -7,7 +7,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self._import_character_assets()
         self.frame_index = 0
-        self.animation_speed = 0.25
+        self.animation_speed = 0.15
         self.image = self.animations["walk"][self.frame_index]
         self.image = pygame.Surface((Tile_size,Tile_size))
 
